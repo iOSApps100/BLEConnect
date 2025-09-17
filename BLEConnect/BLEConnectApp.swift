@@ -12,6 +12,7 @@ struct BLEConnectApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(BLEManager())
         }
     }
 }
