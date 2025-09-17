@@ -4,33 +4,76 @@
 //
 //  Created by Vikram Kumar on 14/09/25.
 //
-
 import SwiftUI
+import CoreBluetooth
 
 struct ContentView: View {
     @StateObject var ble = BLEManager()
+    @State private var selectedPeripheralID: UUID?
 
     var body: some View {
         NavigationView {
-            VStack {
-                if let connected = ble.connectedPeripheral {
-                    Text("Connected to \(connected.name ?? "ESP32")")
-                        .font(.headline)
-                    Text("Received: \(ble.receivedValue)")
-                        .padding()
+            List {
+                Section {
+                    if !ble.isBluetoothOn {
+                        HStack {
+                            Image(systemName: "bolt.slash.fill")
+                            Text("Bluetooth is off")
+                            Spacer()
+                            Button("Retry") { ble.startScan() }
+                        }
+                    } else if ble.devices.isEmpty {
+                        HStack {
+                            Spacer()
+                            ProgressView("Scanning…")
+                            Spacer()
+                        }
+                    } else {
+                        ForEach(ble.devices, id: \.identifier) { peripheral in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(peripheral.name ?? "Unknown")
+                                        .font(.headline)
+                                    Text(peripheral.identifier.uuidString)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
 
-                    Button("Send Hello") {
-                        ble.write("Hello from iOS")
-                    }
-                    .padding()
-                } else {
-                    List(ble.devices, id: \.identifier) { peripheral in
-                        Button(peripheral.name ?? "Unknown") {
-                            ble.connect(to: peripheral)
+                                Spacer()
+
+                                Button(action: {
+                                    // start connection and navigate
+                                    ble.connect(to: peripheral)
+                                    selectedPeripheralID = peripheral.identifier
+                                }) {
+                                    if ble.connectingPeripheralID == peripheral.identifier {
+                                        ProgressView()
+                                            .frame(width: 80)
+                                    } else {
+                                        Text("Connect")
+                                            .frame(minWidth: 80)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(ble.connectingPeripheralID == peripheral.identifier)
+                            }
+                            .padding(.vertical, 8)
+                            // hidden NavigationLink that triggers when selectedPeripheralID is set
+                            .background(
+                                NavigationLink(destination: DeviceDetailView(peripheral: peripheral).environmentObject(ble),
+                                               tag: peripheral.identifier,
+                                               selection: $selectedPeripheralID) {
+                                    EmptyView()
+                                }
+                                .hidden()
+                            )
                         }
                     }
+                } header: {
+                    Text("Available Devices")
                 }
             }
+            .listStyle(InsetGroupedListStyle())
             .navigationTitle("BLE Demo")
         }
     }
