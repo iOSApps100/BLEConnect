@@ -9,72 +9,32 @@ import CoreBluetooth
 
 struct ContentView: View {
     @StateObject var ble = BLEManager()
-    @State private var selectedPeripheralID: UUID?
 
     var body: some View {
         NavigationView {
-            List {
-                Section {
-                    if !ble.isBluetoothOn {
+            VStack {
+                if let connected = ble.connectedPeripheral {
+                    NavigationLink(destination: DeviceDetailView(ble: ble, deviceName: connected.name ?? "ESP32")) {
+                        Text("Open Device Dashboard")
+                            .font(.headline)
+                            .padding()
+                            .background(Color.blue.opacity(0.2))
+                            .cornerRadius(12)
+                    }
+                } else {
+                    List(ble.devices, id: \.identifier) { peripheral in
                         HStack {
-                            Image(systemName: "bolt.slash.fill")
-                            Text("Bluetooth is off")
+                            Text(peripheral.name ?? "Unknown")
                             Spacer()
-                            Button("Retry") { ble.startScan() }
-                        }
-                    } else if ble.devices.isEmpty {
-                        HStack {
-                            Spacer()
-                            ProgressView("Scanning…")
-                            Spacer()
-                        }
-                    } else {
-                        ForEach(ble.devices, id: \.identifier) { peripheral in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(peripheral.name ?? "Unknown")
-                                        .font(.headline)
-                                    Text(peripheral.identifier.uuidString)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-
-                                Spacer()
-
-                                Button(action: {
-                                    // start connection and navigate
-                                    ble.connect(to: peripheral)
-                                    selectedPeripheralID = peripheral.identifier
-                                }) {
-                                    if ble.connectingPeripheralID == peripheral.identifier {
-                                        ProgressView()
-                                            .frame(width: 80)
-                                    } else {
-                                        Text("Connect")
-                                            .frame(minWidth: 80)
-                                    }
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(ble.connectingPeripheralID == peripheral.identifier)
+                            Button("Connect") {
+                                ble.connect(to: peripheral)
                             }
-                            .padding(.vertical, 8)
-                            // hidden NavigationLink that triggers when selectedPeripheralID is set
-                            .background(
-                                NavigationLink(destination: DeviceDetailView(peripheral: peripheral).environmentObject(ble),
-                                               tag: peripheral.identifier,
-                                               selection: $selectedPeripheralID) {
-                                    EmptyView()
-                                }
-                                .hidden()
-                            )
+                            .buttonStyle(.borderedProminent)
                         }
                     }
-                } header: {
-                    Text("Available Devices")
                 }
             }
-            .listStyle(InsetGroupedListStyle())
-            .navigationTitle("BLE Demo")
+            .navigationTitle("BLE Devices")
         }
     }
 }
