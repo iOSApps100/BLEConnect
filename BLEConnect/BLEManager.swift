@@ -65,9 +65,11 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                         didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
+        
         if !devices.contains(peripheral) {
             devices.append(peripheral)
-        }    }
+        }
+    }
 
     // MARK: - Connect / disconnect
     func connect(to peripheral: CBPeripheral) {
@@ -204,3 +206,43 @@ struct TemperatureEntry: Identifiable {
     let timestamp: Date
     let value: Double
 }
+/*
+ What happens when Arduino sends "27"
+ Arduino side
+ String tempStr = String(27);
+ pCharacteristic->setValue(tempStr.c_str());
+ pCharacteristic->notify();
+ tempStr.c_str() → "27\0" (ASCII characters "2", "7", plus a null terminator).
+ Each character is just a byte:
+ "2" → ASCII code 0x32 → decimal 50
+ "7" → ASCII code 0x37 → decimal 55
+ "\0" → ASCII code 0x00 → decimal 0
+ What actually travels over BLE
+ BLE does not know about strings — it only knows arrays of bytes.
+ So "27\0" becomes:
+ [0x32, 0x37, 0x00]
+ Or in decimal: [50, 55, 0].
+ iOS receives this in CoreBluetooth
+ if let data = characteristic.value {
+     print(data as NSData)
+ }
+ Output would be something like:
+ <323700>
+ (hex representation of bytes: 0x32, 0x37, 0x00)
+ Decoding on iOS
+ When you write:
+ String(data: data, encoding: .utf8)
+ iOS looks at those bytes:
+ 0x32 → "2"
+ 0x37 → "7"
+ 0x00 → null terminator (ignored in UTF-8 decoding)
+ So you get "27" back as a Swift String.
+ ✅ So that line means:
+ BLE doesn’t send “27” as a number.
+ It sends the raw bytes representing the characters "2", "7".
+ Your iPhone reconstructs those bytes into the original string.
+ 👉 In short:
+ "27" as text = [0x32, 0x37, 0x00]
+ 27 as raw integer = [0x1B]
+
+ */
