@@ -26,6 +26,17 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
+        /*
+         BLE can run when your app is in background (or even screen locked).
+         To enable this:
+         In Xcode > Signing & Capabilities > Background Modes:
+         Enable ✅ Uses Bluetooth LE accessories.
+         Your CBCentralManager must be created with a restore identifier:
+         */
+//        centralManager = CBCentralManager(delegate: self,
+//                                           queue: nil,
+//                                           options: [CBCentralManagerOptionRestoreIdentifierKey: "MyBLECentral"])
+
     }
 
     // MARK: - Central state / scanning
@@ -35,6 +46,16 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
             isBluetoothOn = true
             centralManager.scanForPeripherals(withServices: [serviceUUID])
             print("Bluetooth ON — Scanning…")
+        case .poweredOff:
+            print("Bluetooth OFF")
+        case .resetting:
+            print("Bluetooth resetting…")
+        case .unsupported:
+            print("BLE unsupported on this device")
+        case .unauthorized:
+            print("BLE unauthorized (check permissions in Info.plist)")
+        case .unknown:
+            print("State unknown, waiting…")
         default:
             isBluetoothOn = false
             centralManager.stopScan()
@@ -96,14 +117,44 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         print("Failed to connect: \(error?.localizedDescription ?? "unknown")")
     }
 
+        /*
+         When your peripheral disconnects (out of range, power loss, or ESP32 reset), the central (iOS app) should:
+         Detect the disconnection.
+         Try reconnecting automatically after a small delay.
+         
+         
+         What happens:
+         If ESP32 disconnects, your app auto-reconnects without user action.
+         On resume, it re-discovers services/characteristics and resumes notifications.
+         */
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        if connectedPeripheral?.identifier == peripheral.identifier {
-            connectedPeripheral = nil
-            targetCharacteristic = nil
-            receivedValue = ""
+        print("Disconnected from \(peripheral.name ?? "Unknown")")
+
+        // Optional: Notify UI
+        DispatchQueue.main.async {
+            self.connectedPeripheral = nil
         }
-        print("Disconnected")
+
+        // Auto-reconnect after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            central.connect(peripheral, options: nil)
+        }
     }
+    /*
+     This ensures:
+     If your app is killed/restarted by iOS, it can resume BLE sessions.
+     Notifications (like temperature updates) still arrive in background.
+     */
+    func centralManager(_ central: CBCentralManager,
+                        willRestoreState dict: [String : Any]) {
+        if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+            connectedPeripheral = peripherals.first
+            connectedPeripheral?.delegate = self
+            print("Restored peripheral: \(connectedPeripheral?.name ?? "Unknown")")
+        }
+    }
+
+
 
     // MARK: - Peripheral callbacks
 //    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {

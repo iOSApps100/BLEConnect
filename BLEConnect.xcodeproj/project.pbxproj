@@ -10,9 +10,22 @@
 		C6F8DE832E76A60F00360E1D /* BLEConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BLEConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C63291432E8E690F002DC996 /* Exceptions for "BLEConnect" folder in "BLEConnect" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C6F8DE822E76A60F00360E1D /* BLEConnect */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C6F8DE852E76A60F00360E1D /* BLEConnect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C63291432E8E690F002DC996 /* Exceptions for "BLEConnect" folder in "BLEConnect" target */,
+			);
 			path = BLEConnect;
 			sourceTree = "<group>";
 		};
@@ -255,6 +268,7 @@
 				DEVELOPMENT_TEAM = 7LNUKLD5QF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BLEConnect/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "BlueTooth access to connect ESP32.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "App needs Bluetooth to connect to BLE devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -287,6 +301,7 @@
 				DEVELOPMENT_TEAM = 7LNUKLD5QF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BLEConnect/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "BlueTooth access to connect ESP32.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "App needs Bluetooth to connect to BLE devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
